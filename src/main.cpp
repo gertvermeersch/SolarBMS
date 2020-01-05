@@ -3,8 +3,10 @@
 #include <SPI.h>
 
 #define VOLTAGE_PIN A0
+#define RELAY_PIN 2
 
 double current_voltage = 12.1;
+boolean bPowerEnabled = false;
 
 U8G2_ST7920_128X64_1_SW_SPI u8g2(U8G2_R0, 12, 11, 10); //SCK = 12, MOSI =11, CS 10
 
@@ -13,34 +15,44 @@ void draw();
 void loop();
 void drawLayout();
 void drawParams();
+double readVoltage();
+boolean isPowerEnabled();
 
-void setup() {
+void setup()
+{
   pinMode(VOLTAGE_PIN, INPUT);
+  pinMode(RELAY_PIN, OUTPUT);
   u8g2.setFontRefHeightExtendedText();
   u8g2.begin();
   Serial.begin(9600);
   Serial.println("SolarBMS v0.1");
-
-  
 }
 
-void loop() {
-  current_voltage = analogRead(VOLTAGE_PIN) * 0.0048828125 * 3;
-  Serial.println(current_voltage);
+void loop()
+{
+  //voltage
+  current_voltage = readVoltage();
+  //enable relay
+  bPowerEnabled = isPowerEnabled();
+  digitalWrite(RELAY_PIN, bPowerEnabled);
+
   //draw
   u8g2.firstPage();
-  do {
+  do
+  {
     draw();
-  } while ( u8g2.nextPage() );
+  } while (u8g2.nextPage());
   delay(1000);
 }
 
-void draw() {
+void draw()
+{
   drawLayout();
   drawParams();
 }
 
-void drawLayout() {
+void drawLayout()
+{
   u8g2.setFont(u8g_font_helvR08);
   u8g2.setFontPosTop();
   /*u8g.drawStr( 3, 50, "Outlets");
@@ -66,27 +78,42 @@ void drawLayout() {
 
   //charge & power params
   u8g2.drawFrame(0, 35, 128, 14);
-  u8g2.drawStr(2, 37, "Pwr: offline");
+  bPowerEnabled ? u8g2.drawStr(2, 37, "Pwr: online") : u8g2.drawStr(2, 37, "Pwr: offline") ;
   u8g2.drawStr(65, 37, "Chrg: 83%");
 
   //u8g2.drawDisc(30, 42, 4);
 
   //charge bar
-  int bar_progress = current_voltage * 8.85;
-  u8g2.drawFrame(0, 50, 128, 14); //charge frame
-  u8g2.drawBox(2, 52, bar_progress, 10); //charge bar (0 = empty, 124 = full)
-  
-
-  
+  int bar_progress = current_voltage * 9.2;
+  u8g2.drawFrame(0, 50, 128, 14);        //charge frame
+  u8g2.drawBox(2, 52, bar_progress, 10); //charge bar (0 = empty, 126 = full)
 
   u8g2.setFont(u8g_font_helvR08);
   u8g2.setFontPosTop();
 }
 
-void drawParams() {
+void drawParams()
+{
   char buf[6];
   char voltage[7];
   dtostrf(current_voltage, 4, 2, buf);
   snprintf(voltage, sizeof voltage, "%sV", buf);
-  u8g2.drawStr(25,2, voltage);
+  u8g2.drawStr(25, 2, voltage);
+}
+
+double readVoltage()
+{
+  return analogRead(VOLTAGE_PIN) * 0.0044692737430168 * 3;
+}
+
+boolean isPowerEnabled()
+{
+  if (bPowerEnabled)
+  {
+    return (readVoltage() > 11.5);
+  }
+  else
+  {
+    return (readVoltage() > 12.5);
+  }
 }
