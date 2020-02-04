@@ -1,9 +1,13 @@
 #include <Arduino.h>
 #include <U8g2lib.h>
 #include <SPI.h>
+#include <Adafruit_ADS1015.h>
+#include <Wire.h>
 
 #define VOLTAGE_PIN A0
 #define RELAY_PIN 2
+
+Adafruit_ADS1115 ads = Adafruit_ADS1115(0x48);
 
 double current_voltage = 12.1;
 boolean bPowerEnabled = false;
@@ -26,7 +30,9 @@ void setup()
   u8g2.begin();
   Serial.begin(9600);
   Serial.println("SolarBMS v0.1");
-}
+
+  ads.setGain(GAIN_SIXTEEN);
+  ads.begin();}
 
 void loop()
 {
@@ -43,6 +49,20 @@ void loop()
     draw();
   } while (u8g2.nextPage());
   delay(1000);
+
+  //read voltage
+
+  int16_t adc0, adc1, adc2, adc3;
+
+  adc0 = ads.readADC_SingleEnded(0);
+  adc1 = ads.readADC_SingleEnded(1);
+  adc2 = ads.readADC_SingleEnded(2);
+  adc3 = ads.readADC_SingleEnded(3);
+  Serial.print("AIN0: "); Serial.println(adc0);
+  Serial.print("AIN1: "); Serial.println(adc1);
+  Serial.print("AIN2: "); Serial.println(adc2);
+  Serial.print("AIN3: "); Serial.println(adc3);
+  Serial.println(" ");
 }
 
 void draw()
