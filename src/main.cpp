@@ -31,6 +31,7 @@ void setup()
   Serial.begin(9600);
   Serial.println("SolarBMS v0.1");
 
+  Wire.begin(1, 2); //SDA SCL
   ads.setGain(GAIN_SIXTEEN);
   ads.begin();}
 
@@ -44,8 +45,7 @@ void loop()
 
   //draw
   u8g2.firstPage();
-  do
-  {
+  do {
     draw();
   } while (u8g2.nextPage());
   delay(1000);
