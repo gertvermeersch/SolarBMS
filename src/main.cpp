@@ -1,39 +1,39 @@
 #include <Arduino.h>
 #include <U8g2lib.h>
 #include <SPI.h>
-#include <Adafruit_ADS1015.h>
-#include <Wire.h>
+#include "SolarBMS.h"
 
-#define VOLTAGE_PIN A0
-#define RELAY_PIN 2
+#define RELAY_PIN 15
 
-Adafruit_ADS1115 ads = Adafruit_ADS1115(0x48);
 
-double dCurrent_voltage = 0;
-double dCurrent_current = 0;
-boolean bPowerEnabled = false;
+SolarBMS bms(RELAY_PIN, 4, 5, 0x48);
 
-U8G2_ST7920_128X64_1_SW_SPI u8g2(U8G2_R0, 12, 14, 16); //SCK = 12, MOSI = 14, CS = 16
+// double dCurrent_voltage = 0;
+// double dCurrent_current = 0;
+// boolean bPowerEnabled = false;
+
+//U8G2_ST7920_128X64_1_SW_SPI u8g2(U8G2_R0, 12, 14, 16); //SCK = 12, MOSI = 14, CS = 16
 
 void setup();
-void draw();
+// void draw();
 void loop();
 // void drawLayout();
 // void drawParams();
-double readVoltage();
-double readCurrent();
-boolean isPowerEnabled();
+// double readVoltage();
+// double readCurrent();
+// boolean isPowerEnabled();
+// void cycleRelay();
 
 void setup()
 {
-  pinMode(VOLTAGE_PIN, INPUT);
+
   pinMode(RELAY_PIN, OUTPUT);
   
   Serial.begin(115200);
-  Serial.println("SolarBMS v0.2");
+  Serial.println("SolarBMS v0.3");
 
   Serial.println("Starting two wire");
-  Wire.begin(4, 5); //SDA SCL
+  
 
   // ads.setGain(GAIN_TWOTHIRDS);  // 2/3x gain +/- 6.144V  1 bit = 3mV      0.1875mV (default)
   // ads.setGain(GAIN_ONE);        // 1x gain   +/- 4.096V  1 bit = 2mV      0.125mV
@@ -41,8 +41,6 @@ void setup()
   // ads.setGain(GAIN_FOUR);       // 4x gain   +/- 1.024V  1 bit = 0.5mV    0.03125mV
   // ads.setGain(GAIN_EIGHT);      // 8x gain   +/- 0.512V  1 bit = 0.25mV   0.015625mV
   // ads.setGain(GAIN_SIXTEEN);    // 16x gain  +/- 0.256V  1 bit = 0.125mV  0.0078125mV
-  ads.begin();
-
   // Serial.println("Starting LCD");
   // u8g2.setFontRefHeightExtendedText();
   // u8g2.begin();
@@ -50,42 +48,52 @@ void setup()
 
 void loop()
 {
-  //enable relay
-  bPowerEnabled = isPowerEnabled();
-  digitalWrite(RELAY_PIN, bPowerEnabled);
+  //bms.cycleRelay();
+  
 
   Serial.print("Voltage: ");
-  Serial.println(readVoltage());
+  Serial.println(bms.readVoltage());
 
-  Serial.print("Current: ");
-  Serial.println(readCurrent());
+  // Serial.print("Current: ");
+  // Serial.println(bms.readCurrent(), 4);
 
   delay(1000);
 }
 
-double readVoltage()
-{
-  ads.setGain(GAIN_ONE);
-  return ads.readADC_SingleEnded(0) * 0.000125 * 6 + 0.2; // 1/6 voltage divider, 0.2 deviation
-}
+// double readVoltage()
+// {
+//   ads.setGain(GAIN_ONE);
+//   return ads.readADC_SingleEnded(0) * 0.000125 * 6; // 1/6 voltage divider
+// }
 
-double readCurrent()
-{
-  ads.setGain(GAIN_SIXTEEN); //TODO: Convert to amps
-  return ads.readADC_SingleEnded(1) * 0.0000078125; // 1/6 voltage divider, 0.2 deviation
-}
+// double readCurrent()
+// {
+//   ads.setGain(GAIN_SIXTEEN); 
+//   return ads.readADC_SingleEnded(1) * 0.0000078125 * 1333.33; 
+// }
 
-boolean isPowerEnabled()
-{
-  if (bPowerEnabled)
-  {
-    return (readVoltage() > 11.5);
-  }
-  else
-  {
-    return (readVoltage() > 12.5);
-  }
-}
+// void cycleRelay() {
+// //enable relay
+//   boolean bPowerEnabledOld = bPowerEnabled;
+//   bPowerEnabled = isPowerEnabled();
+//   if(bPowerEnabled != bPowerEnabledOld) {
+//     Serial.print("External power: ");
+//     Serial.println(bPowerEnabled);
+//     digitalWrite(RELAY_PIN, bPowerEnabled);
+//   }
+// }
+
+// boolean isPowerEnabled()
+// {
+//   if (bPowerEnabled)
+//   {
+//     return (readVoltage() > 11.5);
+//   }
+//   else
+//   {
+//     return (readVoltage() > 12.5);
+//   }
+// }
 
 // void draw()
 // {
