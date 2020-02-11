@@ -1,7 +1,8 @@
 #include <Arduino.h>
-#include <U8g2lib.h>
+//#include <U8g2lib.h>
 #include <SPI.h>
 #include "SolarBMS.h"
+#include "WifiService.h"
 
 #define RELAY_PIN 15
 
@@ -35,12 +36,7 @@ void setup()
   Serial.println("Starting two wire");
   
 
-  // ads.setGain(GAIN_TWOTHIRDS);  // 2/3x gain +/- 6.144V  1 bit = 3mV      0.1875mV (default)
-  // ads.setGain(GAIN_ONE);        // 1x gain   +/- 4.096V  1 bit = 2mV      0.125mV
-  // ads.setGain(GAIN_TWO);        // 2x gain   +/- 2.048V  1 bit = 1mV      0.0625mV
-  // ads.setGain(GAIN_FOUR);       // 4x gain   +/- 1.024V  1 bit = 0.5mV    0.03125mV
-  // ads.setGain(GAIN_EIGHT);      // 8x gain   +/- 0.512V  1 bit = 0.25mV   0.015625mV
-  // ads.setGain(GAIN_SIXTEEN);    // 16x gain  +/- 0.256V  1 bit = 0.125mV  0.0078125mV
+  
   // Serial.println("Starting LCD");
   // u8g2.setFontRefHeightExtendedText();
   // u8g2.begin();
