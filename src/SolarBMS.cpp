@@ -12,7 +12,7 @@ SolarBMS::SolarBMS(int iRelayPin, int SDA, int SCL, int addr)
 double SolarBMS::readVoltage()
 {
     _ads.setGain(GAIN_ONE);
-    return _ads.readADC_SingleEnded(0) * 0.000125 * 6; // 1/6 voltage divider
+    return _ads.readADC_SingleEnded(0) * 0.000125 * 6.15; // 1/6 voltage divider
     
 }
 
