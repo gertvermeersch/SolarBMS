@@ -10,10 +10,11 @@ class WifiService {
     public:
         WifiService();
         void sendStatus(double voltage, double current);
-        void connectWifi(char* ssid, char* password);
+        void connectWifi(const char* ssid, const char* password);
         void connectMQTT(int* ip, int port, char* user, char* password);
         void publish(char* topic, char* payload);
         bool isConnected();
+        void scanAndPrintNetworks();
     private:
         char* _aAvailabilityTopic;
         char* _aPayloadTopic;

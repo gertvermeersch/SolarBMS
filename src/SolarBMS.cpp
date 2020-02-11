@@ -12,8 +12,8 @@ SolarBMS::SolarBMS(int iRelayPin, int SDA, int SCL, int addr)
 double SolarBMS::readVoltage()
 {
     _ads.setGain(GAIN_ONE);
-    int16_t raw = _ads.readADC_SingleEnded(2);
-    return (double) raw * 0.000125 * 6; // 1/6 voltage divider
+    return _ads.readADC_SingleEnded(0) * 0.000125 * 6; // 1/6 voltage divider
+    
 }
 
 double SolarBMS::readCurrent()
@@ -25,8 +25,7 @@ double SolarBMS::readCurrent()
     // ads.setGain(GAIN_EIGHT);      // 8x gain   +/- 0.512V  1 bit = 0.25mV   0.015625mV
     // ads.setGain(GAIN_SIXTEEN);    // 16x gain  +/- 0.256V  1 bit = 0.125mV  0.0078125mV
     _ads.setGain(GAIN_SIXTEEN);
-    int16_t raw = _ads.readADC_SingleEnded(1);
-    return (double) raw * 0.0000078125 * 1333.33;
+    return _ads.readADC_SingleEnded(1) * 0.0000078125 * 1333.33; 
 }
 
 bool SolarBMS::isPowerEnabled()

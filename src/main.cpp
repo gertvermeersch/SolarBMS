@@ -1,16 +1,17 @@
 #include <Arduino.h>
 //#include <U8g2lib.h>
 #include <SPI.h>
-//#include "SolarBMS.h"
+#include "SolarBMS.h"
 #include "WifiService.h"
+#include "pass.h"
 
-#include <Adafruit_ADS1015.h>
-#include <Wire.h>
+#define RELAY_PIN 13
 
-#define RELAY_PIN 15
 
-Adafruit_ADS1015 _ads;
-//SolarBMS bms(RELAY_PIN, 4, 5, 0x48);
+const char* mqtt_server = "192.168.1.14";
+
+SolarBMS bms(RELAY_PIN, 4, 5, 0x48);
+WifiService wifiService;
 
 // double dCurrent_voltage = 0;
 // double dCurrent_current = 0;
@@ -23,7 +24,7 @@ void setup();
 void loop();
 // void drawLayout();
 // void drawParams();
-double readVoltage();
+//double readVoltage();
 // double readCurrent();
 // boolean isPowerEnabled();
 // void cycleRelay();
@@ -35,12 +36,9 @@ void setup()
   
   Serial.begin(115200);
   Serial.println("SolarBMS v0.3");
+  wifiService = WifiService();
+  wifiService.connectWifi(ssid, password);
 
-  Serial.println("Starting two wire");
-  
-   Wire.begin(4, 5); //SDA SCL
-    _ads = Adafruit_ADS1115(0x48);
-    _ads.begin();
   
   // Serial.println("Starting LCD");
   // u8g2.setFontRefHeightExtendedText();
@@ -49,23 +47,28 @@ void setup()
 
 void loop()
 {
-  //bms.cycleRelay();
-  
+  bms.cycleRelay();
+  delay(100);
 
   Serial.print("Voltage: ");
-  Serial.println(readVoltage());
+  Serial.print(bms.readVoltage());
+  delay(100);
 
-  // Serial.print("Current: ");
-  // Serial.println(bms.readCurrent(), 4);
+  Serial.print("\tCurrent: ");
+  Serial.println(bms.readCurrent(), 4);
 
-  delay(5000);
+  delay(500);
+
+  if(!wifiService.isConnected()) {
+    wifiService.connectWifi(ssid, password);
+  }
 }
 
-double readVoltage()
-{
-  _ads.setGain(GAIN_ONE);
-  return _ads.readADC_SingleEnded(2) * 0.000125 * 6; // 1/6 voltage divider
-}
+// double readVoltage()
+// {
+//   _ads.setGain(GAIN_ONE);
+//   return _ads.readADC_SingleEnded(2) * 0.000125 * 6; // 1/6 voltage divider
+// }
 
 // double readCurrent()
 // {
@@ -154,3 +157,4 @@ double readVoltage()
 //   snprintf(voltage, sizeof voltage, "%sV", buf);
 //   u8g2.drawStr(25, 2, voltage);
 // }
+
