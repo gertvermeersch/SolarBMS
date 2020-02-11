@@ -1,13 +1,16 @@
 #include <Arduino.h>
 //#include <U8g2lib.h>
 #include <SPI.h>
-#include "SolarBMS.h"
+//#include "SolarBMS.h"
 #include "WifiService.h"
+
+#include <Adafruit_ADS1015.h>
+#include <Wire.h>
 
 #define RELAY_PIN 15
 
-
-SolarBMS bms(RELAY_PIN, 4, 5, 0x48);
+Adafruit_ADS1015 _ads;
+//SolarBMS bms(RELAY_PIN, 4, 5, 0x48);
 
 // double dCurrent_voltage = 0;
 // double dCurrent_current = 0;
@@ -20,7 +23,7 @@ void setup();
 void loop();
 // void drawLayout();
 // void drawParams();
-// double readVoltage();
+double readVoltage();
 // double readCurrent();
 // boolean isPowerEnabled();
 // void cycleRelay();
@@ -35,7 +38,9 @@ void setup()
 
   Serial.println("Starting two wire");
   
-
+   Wire.begin(4, 5); //SDA SCL
+    _ads = Adafruit_ADS1115(0x48);
+    _ads.begin();
   
   // Serial.println("Starting LCD");
   // u8g2.setFontRefHeightExtendedText();
@@ -48,19 +53,19 @@ void loop()
   
 
   Serial.print("Voltage: ");
-  Serial.println(bms.readVoltage());
+  Serial.println(readVoltage());
 
   // Serial.print("Current: ");
   // Serial.println(bms.readCurrent(), 4);
 
-  delay(1000);
+  delay(5000);
 }
 
-// double readVoltage()
-// {
-//   ads.setGain(GAIN_ONE);
-//   return ads.readADC_SingleEnded(0) * 0.000125 * 6; // 1/6 voltage divider
-// }
+double readVoltage()
+{
+  _ads.setGain(GAIN_ONE);
+  return _ads.readADC_SingleEnded(2) * 0.000125 * 6; // 1/6 voltage divider
+}
 
 // double readCurrent()
 // {
