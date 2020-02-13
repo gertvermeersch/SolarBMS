@@ -3,20 +3,26 @@
 #include "SolarBMS.h"
 #include "pass.h"
 #include "WifiService.h"
+#include <Ticker.h>
 
 
 #define RELAY_PIN 13
+
+Ticker ticker;
+double voltage = 0;
+double current = 0;
 
 IPAddress ip = IPAddress(192,168,1,14);
 
 SolarBMS bms(RELAY_PIN, 4, 5, 0x48);
 WifiService wifiService;
-
+short timer = 0;
+bool send = false;
 
 void setup();
 
 void loop();
-
+void onTimerInterrupt();
 
 void setup()
 {
@@ -26,31 +32,45 @@ void setup()
   Serial.begin(115200);
   Serial.println("SolarBMS v0.3");
   wifiService = WifiService();
+  wifiService.scanAndPrintNetworks();
   if(wifiService.connectWifi(ssid, password)) {
     wifiService.connectMQTT(ip, 1883, mqtt_user, mqtt_pass);
   }
-
+  ticker.attach(60, onTimerInterrupt);
 
 }
 
 void loop()
 {
-  bms.cycleRelay();
-  delay(100);
+  
+  delay(1000); //F*ck around a little bit...
 
-  Serial.print("Voltage: ");
-  Serial.print(bms.readVoltage());
-  delay(100);
-
-  Serial.print("\tCurrent: ");
-  Serial.println(bms.readCurrent(), 4);
-
-  delay(500);
+  //TODO: test library stability - take out incorrect reading
 
   if(!wifiService.isConnected()) {
-    wifiService.connectWifi(ssid, password);
+    if(wifiService.connectWifi(ssid, password)) {
+      wifiService.connectMQTT(ip, 1883, mqtt_user, mqtt_pass);
+    }
+   if(wifiService.isConnected() && send) {
+      wifiService.sendStatus(voltage, current);
+      send = !send;
+  }
+  } else {
+      handleClients();
   }
 
-  handleClients();
+
+}
+
+void onTimerInterrupt() {
+  voltage = bms.readVoltage();
+  current = bms.readCurrent();
+  bms.determineRelay(voltage);
+  Serial.print("Voltage: "); //TODO: this can be written shorter snprintf
+  Serial.print(voltage);
+  Serial.print("\tCurrent: ");
+  Serial.println(current, 4);
+  send = true; //send in the main loop
+
 }
 

@@ -28,23 +28,20 @@ double SolarBMS::readCurrent()
     return _ads.readADC_SingleEnded(1) * 0.0000078125 * 1333.33; 
 }
 
-bool SolarBMS::isPowerEnabled()
-{
-    if (_bPowerEnabled)
-    {
-        return (this->readVoltage() > 11.5);
-    }
-    else
-    {
-        return (this->readVoltage() > 12.5);
-    }
-}
 
-void SolarBMS::cycleRelay()
+void SolarBMS::determineRelay(double voltage)
 {
     //enable relay
     bool bPowerEnabledOld = _bPowerEnabled;
-    _bPowerEnabled = isPowerEnabled();
+    if (_bPowerEnabled)
+    {
+        _bPowerEnabled = (voltage > 11.5);
+    }
+    else
+    {
+        _bPowerEnabled = (voltage > 12.5);
+    }
+
     if (_bPowerEnabled != bPowerEnabledOld)
     {
         Serial.print("External power: ");

@@ -2,6 +2,7 @@
 
 #define HOSTNAME "SolarBMS"
 #define AVAILABLE_TOPIC "/solar/available"
+#define SENSOR_TOPIC "/solar/sensor"
 
 //fucky way of creating a server
 ESP8266WebServer _webserver(80);
@@ -17,7 +18,16 @@ WifiService::WifiService()
 }
 void WifiService::sendStatus(double voltage, double current)
 {
+  char payload[100];
+  //TODO": Check efficiency of library
+  const int capacity = JSON_OBJECT_SIZE(2);
+  StaticJsonDocument<capacity> doc;
+  doc["voltage"] = voltage;
+  doc["current"] = current;
+  serializeJson(doc, payload);
+  _client.publish(SENSOR_TOPIC, payload);
 }
+
 bool WifiService::connectWifi(const char* ssid, const char* password)
 {   
     SPIFFS.begin();
@@ -69,6 +79,7 @@ bool WifiService::connectMQTT(IPAddress ip, int port, const char* user, const ch
         return false;
     }
   }
+  return true;
 }
 
 void WifiService::publish(char *topic, char *payload)
@@ -144,12 +155,13 @@ String getContentType(String filename) { // convert the file extension to the MI
 }
 
 bool handleFileRead(String path) { // send the right file to the client (if it exists)
+  	//TODO: create an actual page
   Serial.println("handleFileRead: " + path);
   if (path.endsWith("/")) path += "index.html";         // If a folder is requested, send the index file
   String contentType = getContentType(path);            // Get the MIME type
   if (SPIFFS.exists(path)) {                            // If the file exists
     File file = SPIFFS.open(path, "r");                 // Open it
-    size_t sent = _webserver.streamFile(file, contentType); // And send it to the client
+    _webserver.streamFile(file, contentType); // And send it to the client
     file.close();                                       // Then close the file again
     return true;
   }

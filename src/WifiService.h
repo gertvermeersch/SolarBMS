@@ -6,6 +6,7 @@
 #include <ESP8266mDNS.h>
 #include <PubSubClient.h>
 #include <FS.h>
+#include <ArduinoJson.h>
 
 class WifiService {
     public:

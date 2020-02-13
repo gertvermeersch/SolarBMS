@@ -10,8 +10,7 @@ class SolarBMS {
         SolarBMS(int iRelayPin, int SDA, int SCL, int addr);
         double readVoltage();
         double readCurrent();
-        bool isPowerEnabled();
-        void cycleRelay();
+        void determineRelay(double voltage);
         double getCurrentVoltage();
         double getCurrentCurrent();
     private:
