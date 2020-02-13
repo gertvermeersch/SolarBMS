@@ -12,6 +12,7 @@ WifiService::WifiService()
 {
     _bConnected = false;
     _client = PubSubClient(_espClient);
+    WiFi.scanNetworks();
     WiFi.mode(WIFI_STA);
 
 

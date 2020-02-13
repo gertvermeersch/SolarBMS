@@ -29,7 +29,7 @@ void setup()
 
   pinMode(RELAY_PIN, OUTPUT);
   
-  Serial.begin(115200);
+  Serial.begin(74880);
   Serial.println("SolarBMS v0.3");
   wifiService = WifiService();
   wifiService.scanAndPrintNetworks();
@@ -43,7 +43,7 @@ void setup()
 void loop()
 {
   
-  delay(1000); //F*ck around a little bit...
+  delay(100); //F*ck around a little bit...
 
   //TODO: test library stability - take out incorrect reading
 
@@ -51,25 +51,27 @@ void loop()
     if(wifiService.connectWifi(ssid, password)) {
       wifiService.connectMQTT(ip, 1883, mqtt_user, mqtt_pass);
     }
+  }
    if(wifiService.isConnected() && send) {
+     Serial.print("Voltage: "); //TODO: this can be written shorter snprintf
+    Serial.print(voltage);
+    Serial.print("\tCurrent: ");
+    Serial.println(current, 4);
+    bms.determineRelay(voltage);
       wifiService.sendStatus(voltage, current);
       send = !send;
-  }
+      Serial.println("MQTT message published");
   } else {
       handleClients();
   }
-
+  
 
 }
 
 void onTimerInterrupt() {
   voltage = bms.readVoltage();
   current = bms.readCurrent();
-  bms.determineRelay(voltage);
-  Serial.print("Voltage: "); //TODO: this can be written shorter snprintf
-  Serial.print(voltage);
-  Serial.print("\tCurrent: ");
-  Serial.println(current, 4);
+  
   send = true; //send in the main loop
 
 }
