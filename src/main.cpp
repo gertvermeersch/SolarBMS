@@ -10,21 +10,23 @@
 #define SENSOR_TOPIC "/solar/sensor"
 
 #define RELAY_PIN 13
+#define DEBUG_WIFI 1
 
 Ticker ticker;
 double voltage = 0;
 double current = 0;
-char* buffer;
+char buffer[100];
 
 IPAddress ip = IPAddress(192,168,1,14);
 
-SolarBMS bms(RELAY_PIN, 4, 5, 0x48);
+SolarBMS bms;
 WifiService wifiService;
+
 short timer = 0;
 bool send = true;
 
 void setup();
-void getValueJSON(char* buffer);
+void getValueJSON();
 void loop();
 void onTimerInterrupt();
 void sendStatus();
@@ -38,42 +40,20 @@ void setup()
   
   Serial.begin(74880);
   Serial.println("SolarBMS v0.3");
+  bms = SolarBMS(RELAY_PIN, 4, 5, 0x48);
   wifiService = WifiService();
-  wifiService.scanAndPrintNetworks();
-  if(wifiService.connectWifi(ssid, password)) {
-    if(wifiService.connectMQTT(ip, 1883)) {
-        sendStatus();
-        wifiService.publish(SENSOR_TOPIC, "test");
-      } else {
-        Serial.println("MQTT connection failed!");
-      }
-  }
   ticker.attach(10, onTimerInterrupt);
-
 }
 
 void loop()
 {
-  delay(50);
-  bms.readVoltage();
-  delay(50);
-  bms.readCurrent();
-  
-
   //TODO: test library stability - take out incorrect reading
-   if(wifiService.isConnected() && wifiService.isMQTTConnected() && send) {
-    getValueJSON(buffer);
-    const char* payload = buffer;
-    bms.determineRelay(voltage);
-    wifiService.publish(SENSOR_TOPIC, payload);
-    send = !send;
-    Serial.println("MQTT message published");
-  } 
+  
   maintainWifi();
   maintainMQTT();
       
   handleClients();
-  wifiService.handleMQTT();
+  //wifiService.handleMQTT();
 }
 
 void maintainWifi() {
@@ -81,12 +61,7 @@ void maintainWifi() {
   if(!wifiService.isConnected()) {
     Serial.println("Wifi connection lost!");
     if(wifiService.connectWifi(ssid, password)) {
-      if(wifiService.connectMQTT(ip, 1883)) {
-        sendStatus();
-        wifiService.publish(SENSOR_TOPIC, "test");
-      } else {
-        Serial.println("MQTT connection failed!");
-      }
+      Serial.println("Connection to WiFi restored");
     }
   }
 }
@@ -96,8 +71,7 @@ void maintainMQTT(){
   if(wifiService.isConnected() && !wifiService.isMQTTConnected()) {
     Serial.println("MQTT connection lost!");
     if(wifiService.connectMQTT(ip, 1883)) {
-        sendStatus();
-        wifiService.publish(SENSOR_TOPIC, "test");
+        Serial.println("MQTT connection restored");
       } else {
         Serial.println("MQTT connection failed!");
       }
@@ -105,12 +79,15 @@ void maintainMQTT(){
 }
 
 void onTimerInterrupt() {
-  send = true;
-  sendStatus();
-  wifiService.publish(SENSOR_TOPIC, "test");
+    bms.readCurrent();
+    bms.readVoltage();
+    getValueJSON();
+    bms.determineRelay(voltage);
+    Serial.println(buffer);
+    wifiService.publish(SENSOR_TOPIC, buffer);
 }
 
-void getValueJSON(char* buffer) {
+void getValueJSON() {
   //TODO": Check efficiency of library
   const int capacity = JSON_OBJECT_SIZE(4);
   StaticJsonDocument<capacity> doc;
@@ -118,10 +95,7 @@ void getValueJSON(char* buffer) {
   doc["current"] = bms.getLastCurrent();
   doc["voltageRaw"] = bms.getLastVoltageRaw();
   doc["currentRaw"] = bms.getLastCurrentRaw();
-  char temp[100];
-  serializeJson(doc, temp);
-  buffer = temp;
-  Serial.println(buffer);
+  serializeJson(doc, buffer);
 }
 
 void sendStatus() {

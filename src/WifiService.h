@@ -25,8 +25,7 @@ class WifiService {
         char* _aPayloadTopic;
         bool _bConnected;
         
-        WiFiClient _espClient;
-        PubSubClient _client;
+        
         void _onConnectedCb();
         void _onDisconnectedCb();
         

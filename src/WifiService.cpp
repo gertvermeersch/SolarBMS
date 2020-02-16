@@ -6,21 +6,24 @@
 //fucky way of creating a server
 ESP8266WebServer _webserver(80);
 
+//crashes when using instance variables
+WiFiClient _espClient;
+PubSubClient _mqttClient;
 
 WifiService::WifiService()
 {
     _bConnected = false;
-    _client = PubSubClient(_espClient);
+    _mqttClient = PubSubClient(_espClient);
     WiFi.scanNetworks();
-   // WiFi.mode(WIFI_STA);
+    WiFi.mode(WIFI_STA);
 
 
 }
 void WifiService::publish(const char* topic, const char* payload)
 {
   
-  if(_client.connected()) {
-    _client.publish(topic, payload);
+  if(_mqttClient.connected()) {
+    _mqttClient.publish(topic, payload);
   } else {
     Serial.println("Not connected to MQTT server!");
   }
@@ -63,11 +66,11 @@ bool WifiService::connectWifi(const char* ssid, const char* password)
 
 bool WifiService::connectMQTT(IPAddress ip, int port, const char* user, const char* password)
 {
-  _client.setServer(ip, port);
-  _client.setCallback(onDataCb);
-  if(!_client.connected()) {
+  _mqttClient.setServer(ip, port);
+  _mqttClient.setCallback(onDataCb);
+  if(!_mqttClient.connected()) {
     Serial.println("Connecting to MQTT server...");
-    if(_client.connect(HOSTNAME, user, password)) {
+    if(_mqttClient.connect(HOSTNAME, user, password)) {
       return true;
     } else {
         return false;
@@ -78,11 +81,11 @@ bool WifiService::connectMQTT(IPAddress ip, int port, const char* user, const ch
 
 bool WifiService::connectMQTT(IPAddress ip, int port)
 {
-  _client.setServer(ip, port);
-  _client.setCallback(onDataCb);
-  if(!_client.connected()) {
+  _mqttClient.setServer(ip, port);
+  _mqttClient.setCallback(onDataCb);
+  if(!_mqttClient.connected()) {
     Serial.println("Connecting to MQTT server...");
-    if(_client.connect(HOSTNAME)) {
+    if(_mqttClient.connect(HOSTNAME)) {
       return true;
     } else {
       return false;
@@ -95,12 +98,12 @@ bool WifiService::isConnected() {
 }
 
 bool WifiService::isMQTTConnected() {
-  return _client.connected();
+  return _mqttClient.connected();
 }
 
 //method to be put in loop
 void WifiService::handleMQTT() {
-  _client.loop();
+  _mqttClient.loop();
 }
 
 void WifiService::scanAndPrintNetworks() {
