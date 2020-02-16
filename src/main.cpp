@@ -3,6 +3,7 @@
 #include "SolarBMS.h"
 #include "pass.h"
 #include "WifiService.h"
+#include <ArduinoJson.h>
 #include <Ticker.h>
 
 #define AVAILABLE_TOPIC "/solar/available"
@@ -13,7 +14,7 @@
 Ticker ticker;
 double voltage = 0;
 double current = 0;
-char buffer[100];
+char* buffer;
 
 IPAddress ip = IPAddress(192,168,1,14);
 
@@ -60,7 +61,6 @@ void loop()
     }
   }
    if(wifiService.isConnected() && send) {
-    
     getValueJSON(buffer);
     const char* payload = buffer;
     bms.determineRelay(voltage);
@@ -70,8 +70,6 @@ void loop()
   } else {
       handleClients();
   }
-  
-
 }
 
 void onTimerInterrupt() {
@@ -87,7 +85,9 @@ void getValueJSON(char* buffer) {
   doc["current"] = bms.getLastCurrent();
   doc["voltageRaw"] = bms.getLastVoltageRaw();
   doc["currentRaw"] = bms.getLastCurrentRaw();
-  serializeJson(doc, buffer);
+  char temp[100];
+  serializeJson(doc, temp);
+  buffer = temp;
   Serial.println(buffer);
 }
 
