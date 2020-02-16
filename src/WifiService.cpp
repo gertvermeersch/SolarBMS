@@ -12,7 +12,7 @@ WifiService::WifiService()
     _bConnected = false;
     _client = PubSubClient(_espClient);
     WiFi.scanNetworks();
-    WiFi.mode(WIFI_STA);
+   // WiFi.mode(WIFI_STA);
 
 
 }
@@ -68,11 +68,8 @@ bool WifiService::connectMQTT(IPAddress ip, int port, const char* user, const ch
   if(!_client.connected()) {
     Serial.println("Connecting to MQTT server...");
     if(_client.connect(HOSTNAME, user, password)) {
-      Serial.println("Connected");
-      _onConnectedCb();
       return true;
     } else {
-      	Serial.println("Connection failed!");
         return false;
     }
   }
@@ -86,18 +83,24 @@ bool WifiService::connectMQTT(IPAddress ip, int port)
   if(!_client.connected()) {
     Serial.println("Connecting to MQTT server...");
     if(_client.connect(HOSTNAME)) {
-      Serial.println("Connected");
-      _onConnectedCb();
       return true;
     } else {
-      	Serial.println("Connection failed!");
-        return false;
+      return false;
     }
   }
   return true;
 }
 bool WifiService::isConnected() {
     return WiFi.status() == WL_CONNECTED;
+}
+
+bool WifiService::isMQTTConnected() {
+  return _client.connected();
+}
+
+//method to be put in loop
+void WifiService::handleMQTT() {
+  _client.loop();
 }
 
 void WifiService::scanAndPrintNetworks() {
@@ -123,20 +126,6 @@ void WifiService::scanAndPrintNetworks() {
     }
   }
 }
-
-  void WifiService::_onConnectedCb()
-{
-  Serial.println("connected to MQTT server");
-}
-
-void WifiService::_onDisconnectedCb()
-{
-  Serial.println("disconnected. try to reconnect...");
-  delay(500);
-  
-}
-
-
 
 /* 
 ------------------------------------

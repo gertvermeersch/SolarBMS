@@ -21,13 +21,15 @@ IPAddress ip = IPAddress(192,168,1,14);
 SolarBMS bms(RELAY_PIN, 4, 5, 0x48);
 WifiService wifiService;
 short timer = 0;
-bool send = false;
+bool send = true;
 
 void setup();
 void getValueJSON(char* buffer);
 void loop();
 void onTimerInterrupt();
 void sendStatus();
+void maintainWifi();
+void maintainMQTT();
 
 void setup()
 {
@@ -39,9 +41,14 @@ void setup()
   wifiService = WifiService();
   wifiService.scanAndPrintNetworks();
   if(wifiService.connectWifi(ssid, password)) {
-    wifiService.connectMQTT(ip, 1883);
+    if(wifiService.connectMQTT(ip, 1883)) {
+        sendStatus();
+        wifiService.publish(SENSOR_TOPIC, "test");
+      } else {
+        Serial.println("MQTT connection failed!");
+      }
   }
-  ticker.attach(60, onTimerInterrupt);
+  ticker.attach(10, onTimerInterrupt);
 
 }
 
@@ -51,30 +58,56 @@ void loop()
   bms.readVoltage();
   delay(50);
   bms.readCurrent();
-
+  
 
   //TODO: test library stability - take out incorrect reading
-
-  if(!wifiService.isConnected()) {
-    if(wifiService.connectWifi(ssid, password)) {
-      wifiService.connectMQTT(ip, 1883);
-    }
-  }
-   if(wifiService.isConnected() && send) {
+   if(wifiService.isConnected() && wifiService.isMQTTConnected() && send) {
     getValueJSON(buffer);
     const char* payload = buffer;
     bms.determineRelay(voltage);
     wifiService.publish(SENSOR_TOPIC, payload);
     send = !send;
     Serial.println("MQTT message published");
-  } else {
-      handleClients();
+  } 
+  maintainWifi();
+  maintainMQTT();
+      
+  handleClients();
+  wifiService.handleMQTT();
+}
+
+void maintainWifi() {
+//maintain wifi connection
+  if(!wifiService.isConnected()) {
+    Serial.println("Wifi connection lost!");
+    if(wifiService.connectWifi(ssid, password)) {
+      if(wifiService.connectMQTT(ip, 1883)) {
+        sendStatus();
+        wifiService.publish(SENSOR_TOPIC, "test");
+      } else {
+        Serial.println("MQTT connection failed!");
+      }
+    }
+  }
+}
+
+void maintainMQTT(){
+//maintain mqtt connection
+  if(wifiService.isConnected() && !wifiService.isMQTTConnected()) {
+    Serial.println("MQTT connection lost!");
+    if(wifiService.connectMQTT(ip, 1883)) {
+        sendStatus();
+        wifiService.publish(SENSOR_TOPIC, "test");
+      } else {
+        Serial.println("MQTT connection failed!");
+      }
   }
 }
 
 void onTimerInterrupt() {
   send = true;
-
+  sendStatus();
+  wifiService.publish(SENSOR_TOPIC, "test");
 }
 
 void getValueJSON(char* buffer) {
@@ -94,4 +127,5 @@ void getValueJSON(char* buffer) {
 void sendStatus() {
   wifiService.publish(AVAILABLE_TOPIC, "online");
 }
+
 

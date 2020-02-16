@@ -16,9 +16,10 @@ class WifiService {
         bool connectMQTT(IPAddress ip, int port, const char* user, const char* password);
         bool connectMQTT(IPAddress ip, int port);
         bool isConnected();
+        bool isMQTTConnected();
         void publish(const char* topic, const char* payload);
         void scanAndPrintNetworks();
-        
+        void handleMQTT();
     private:
         char* _aAvailabilityTopic;
         char* _aPayloadTopic;
