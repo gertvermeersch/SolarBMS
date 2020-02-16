@@ -1,8 +1,7 @@
 #include "WifiService.h"
 
 #define HOSTNAME "SolarBMS"
-#define AVAILABLE_TOPIC "/solar/available"
-#define SENSOR_TOPIC "/solar/sensor"
+
 
 //fucky way of creating a server
 ESP8266WebServer _webserver(80);
@@ -17,16 +16,14 @@ WifiService::WifiService()
 
 
 }
-void WifiService::sendStatus(double voltage, double current)
+void WifiService::publish(const char* topic, const char* payload)
 {
-  char payload[100];
-  //TODO": Check efficiency of library
-  const int capacity = JSON_OBJECT_SIZE(2);
-  StaticJsonDocument<capacity> doc;
-  doc["voltage"] = voltage;
-  doc["current"] = current;
-  serializeJson(doc, payload);
-  _client.publish(SENSOR_TOPIC, payload);
+  
+  if(_client.connected()) {
+    _client.publish(topic, payload);
+  } else {
+    Serial.println("Not connected to MQTT server!");
+  }
 }
 
 bool WifiService::connectWifi(const char* ssid, const char* password)
@@ -72,7 +69,6 @@ bool WifiService::connectMQTT(IPAddress ip, int port, const char* user, const ch
     Serial.println("Connecting to MQTT server...");
     if(_client.connect(HOSTNAME, user, password)) {
       Serial.println("Connected");
-      _sendStatus();
       _onConnectedCb();
       return true;
     } else {
@@ -83,10 +79,23 @@ bool WifiService::connectMQTT(IPAddress ip, int port, const char* user, const ch
   return true;
 }
 
-void WifiService::publish(char *topic, char *payload)
+bool WifiService::connectMQTT(IPAddress ip, int port)
 {
+  _client.setServer(ip, port);
+  _client.setCallback(onDataCb);
+  if(!_client.connected()) {
+    Serial.println("Connecting to MQTT server...");
+    if(_client.connect(HOSTNAME)) {
+      Serial.println("Connected");
+      _onConnectedCb();
+      return true;
+    } else {
+      	Serial.println("Connection failed!");
+        return false;
+    }
+  }
+  return true;
 }
-
 bool WifiService::isConnected() {
     return WiFi.status() == WL_CONNECTED;
 }
@@ -118,8 +127,6 @@ void WifiService::scanAndPrintNetworks() {
   void WifiService::_onConnectedCb()
 {
   Serial.println("connected to MQTT server");
-  
-  _sendStatus();
 }
 
 void WifiService::_onDisconnectedCb()
@@ -129,23 +136,17 @@ void WifiService::_onDisconnectedCb()
   
 }
 
-void WifiService::_onPublishedCb()
-{
-  Serial.println("published.");
+
+
+/* 
+------------------------------------
+NON class functions - callbacks
+------------------------------------
+*/
+
+void onDataCb(char* c_topic, byte* b_data, unsigned int length) {
+
 }
-
-
-
-void WifiService::_sendStatus() {
-  _client.publish(AVAILABLE_TOPIC, "online");
-}
-
-  
-  
-
-
-//NON class functions - callbacks
-void onDataCb(char* c_topic, byte* b_data, unsigned int length) {}
 
 String getContentType(String filename) { // convert the file extension to the MIME type
   if (filename.endsWith(".html")) return "text/html";

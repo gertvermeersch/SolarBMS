@@ -14,8 +14,9 @@ class WifiService {
         void sendStatus(double voltage, double current);
         bool connectWifi(const char* ssid, const char* password);
         bool connectMQTT(IPAddress ip, int port, const char* user, const char* password);
-        void publish(char* topic, char* payload);
+        bool connectMQTT(IPAddress ip, int port);
         bool isConnected();
+        void publish(const char* topic, const char* payload);
         void scanAndPrintNetworks();
         
     private:
@@ -26,9 +27,8 @@ class WifiService {
         WiFiClient _espClient;
         PubSubClient _client;
         void _onConnectedCb();
-        void _sendStatus();
         void _onDisconnectedCb();
-        void _onPublishedCb();
+        
        
         
 };
