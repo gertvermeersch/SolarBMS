@@ -9,18 +9,20 @@ class SolarBMS {
     public:
         SolarBMS();
         SolarBMS(int iRelayPin, int SDA, int SCL, int addr);
-        uint16_t readVoltage();
-        uint16_t readCurrent();
+        int readVoltage();
+        int readCurrent();
         void determineRelay(double voltage);
         double getLastVoltage();
-        uint16_t getLastVoltageRaw();
+        int getLastVoltageRaw();
         double getLastCurrent();
-        uint16_t getLastCurrentRaw();
+        int getLastCurrentRaw();
+        bool getRelayOn();
+        void intervalRead();
     
     private:
         int _iRelayPin;
-        uint16_t _iCurrent;
-        uint16_t _iVoltage;
+        int _iCurrent;
+        int _iVoltage;
         bool _bPowerEnabled;
         Adafruit_ADS1115 _ads;
 };
