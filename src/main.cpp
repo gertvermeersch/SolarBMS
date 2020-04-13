@@ -16,7 +16,7 @@ double meanVoltage = 0;
 double meanHour = 0;
 double current = 0;
 char buffer[100];
-double secondsVoltage[6];
+double secondsVoltage[60];
 //double minuteCurrent[6];
 double minutesVoltage[60];
 short secondscounter;
@@ -25,8 +25,8 @@ short hourscounter;
 
 IPAddress ip = IPAddress(192, 168, 1, 14);
 
-SolarBMS bms;
-WifiService wifiService;
+SolarBMS bms(RELAY_PIN, 4, 5, 0x48);
+WifiService wifiService(ssid, password);
 
 short timer = 0;
 bool send = true;
@@ -47,68 +47,19 @@ void setup()
   Serial.begin(74880);
   Serial.println("SolarBMS v0.3");
   Serial.setDebugOutput(true);
-  bms = SolarBMS(RELAY_PIN, 4, 5, 0x48);
-  wifiService = WifiService();
-  wifiService.addWifiNetwork(ssid, password);
-  wifiService.connectWifi();
-  ticker.attach(10, onTimerInterrupt);
+  ticker.attach(1, onTimerInterrupt);
 }
 
 void loop()
 {
-  //TODO: test library stability - take out incorrect reading
-
-  // maintainWifi();
   maintainMQTT();
 
   // handleClients();
   wifiService.handleMQTT();
   handleClients();
   //dont forget to add mqtt client looping here if required
-  delay(500);
-
-  if (secondscounter == 6)
-  {
-    secondscounter = 0;
-    meanVoltage = 0;
-    for (short i = 0; i < 6; i++)
-    {
-      meanVoltage += secondsVoltage[i];
-    }
-    meanVoltage = meanVoltage / 6;
-    getValueJSON();
-    bms.determineRelay(meanVoltage);
-    Serial.println(minutescounter);
-    Serial.println(buffer);
-    minutesVoltage[minutescounter++] = meanVoltage;
-  }
-
-  if(minutescounter == 60) {
-    minutescounter = 0;
-    meanHour = 0;
-    for (short i = 0; i < 60; i++)
-    {
-      meanHour += minutesVoltage[i];
-    }
-    meanHour = meanHour / 60;
-    Serial.print("average for the hour: ");
-    Serial.println(meanHour);
-  }
-
-
-}
-
-void maintainWifi()
-{
-  //maintain wifi connection
-  if (!wifiService.isConnected())
-  {
-    Serial.println("Wifi connection lost!");
-    if (wifiService.connectWifi())
-    {
-      Serial.println("Connection to WiFi restored");
-    }
-  }
+  delay(500); 
+   
 }
 
 void maintainMQTT()
@@ -134,7 +85,34 @@ void onTimerInterrupt()
   bms.readVoltage();
   secondsVoltage[secondscounter++] = bms.getLastVoltage();
   
-  // wifiService.publish(SENSOR_TOPIC, buffer);
+   if (secondscounter == 60)
+  {
+    secondscounter = 0;
+    meanVoltage = 0;
+    for (short i = 0; i < 60; i++)
+    {
+      meanVoltage += secondsVoltage[i];
+    }
+    meanVoltage = meanVoltage / 60;
+    getValueJSON();
+    bms.determineRelay(meanVoltage);
+    Serial.println(minutescounter);
+    Serial.println(buffer);
+    wifiService.publish(SENSOR_TOPIC, buffer);
+    minutesVoltage[minutescounter++] = meanVoltage;
+  }
+
+  if(minutescounter == 60) {
+    minutescounter = 0;
+    meanHour = 0;
+    for (short i = 0; i < 60; i++)
+    {
+      meanHour += minutesVoltage[i];
+    }
+    meanHour = meanHour / 60;
+    Serial.print("average for the hour: ");
+    Serial.println(meanHour);
+  }
 }
 
 void getValueJSON()

@@ -2,22 +2,20 @@
 
 #define HOSTNAME "SolarBMS"
 
-ESP8266WiFiMulti wifiMulti;
 ESP8266WebServer _webserver(80);
 
 //crashes when using instance variables
 WiFiClient _espClient;
 PubSubClient _mqttClient;
 
-WifiService::WifiService()
+WifiService::WifiService(const char *ssid, const char *password)
 {
   _bConnected = false;
   _mqttClient = PubSubClient(_espClient);
   SPIFFS.begin();
-  WiFi.begin();
-  
-  scanAndPrintNetworks();
+  connectWifi(ssid, password);
 }
+
 void WifiService::publish(const char *topic, const char *payload)
 {
 
@@ -31,39 +29,43 @@ void WifiService::publish(const char *topic, const char *payload)
   }
 }
 
-void WifiService::addWifiNetwork(const char *ssid, const char *password)
+bool WifiService::connectWifi(const char *ssid, const char *password)
 {
-  wifiMulti.addAP(ssid, password);
-}
+  if (!WiFi.isConnected())
 
-bool WifiService::connectWifi()
-{
+  {
 
-  Serial.print("Connecting to WiFi...");
-  WiFi.mode(WIFI_STA);
-  // Wait for connection to wifi
-  short timer = 0;
-  while (wifiMulti.run() != WL_CONNECTED && timer++ < 10) //10 seconds timeout
-  {
-    delay(1000);
-    Serial.print(".");
-  }
-  if (wifiMulti.run() == WL_CONNECTED)
-  {
-    Serial.print("IP address: ");
-    Serial.println(WiFi.localIP());
-    if (MDNS.begin(HOSTNAME))
+    Serial.print("Connecting to WiFi...");
+     WiFi.setAutoReconnect(true);
+    WiFi.begin(ssid, password);
+    // Wait for connection to wifi
+    short timer = 0;
+    while (!WiFi.isConnected() && timer++ < 10) //10 seconds timeout
     {
-      Serial.println("MDNS responder started");
-      startWebserver();
+      delay(1000);
+      Serial.print(".");
     }
+    if (WiFi.isConnected())
+    {
+      Serial.print("IP address: ");
+      Serial.println(WiFi.localIP());
+      if (MDNS.begin(HOSTNAME))
+      {
+        Serial.println("MDNS responder started");
+        startWebserver();
+      }
+      return true;
+    }
+    else
+    {
+      Serial.println("Connection to WiFi failed");
+      return false;
+    }
+  } else {
+    Serial.println("already connected!");
     return true;
   }
-  else
-  {
-    Serial.println("Connection to WiFi failed");
-    return false;
-  }
+  
 }
 
 bool WifiService::connectMQTT(IPAddress ip, int port, const char *user, const char *password)
@@ -75,6 +77,7 @@ bool WifiService::connectMQTT(IPAddress ip, int port, const char *user, const ch
     Serial.println("Connecting to MQTT server...");
     if (_mqttClient.connect(HOSTNAME, user, password))
     {
+      publish("/solar/available", "online");
       return true;
     }
     else
@@ -94,6 +97,7 @@ bool WifiService::connectMQTT(IPAddress ip, int port)
     Serial.println("Connecting to MQTT server...");
     if (_mqttClient.connect(HOSTNAME))
     {
+      publish("/solar/available", "online");
       return true;
     }
     else

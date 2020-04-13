@@ -2,7 +2,6 @@
 #define WifiService_h
 
 #include <ESP8266WiFi.h>
-#include <ESP8266WiFiMulti.h>
 #include <ESP8266WebServer.h>
 #include <ESP8266mDNS.h>
 #include <PubSubClient.h>
@@ -11,10 +10,9 @@
 
 class WifiService {
     public:
-        WifiService();
+        WifiService(const char* ssid, const char* password);
         void sendStatus(double voltage, double current);
-        void addWifiNetwork(const char* ssid, const char* password);
-        bool connectWifi();
+        bool connectWifi(const char *ssid, const char *password);
         bool connectMQTT(IPAddress ip, int port, const char* user, const char* password);
         bool connectMQTT(IPAddress ip, int port);
         bool isConnected();
@@ -23,8 +21,6 @@ class WifiService {
         void scanAndPrintNetworks();
         void handleMQTT();
     private:
-        char* _aAvailabilityTopic;
-        char* _aPayloadTopic;
         bool _bConnected;
         
         

@@ -7,7 +7,6 @@
 
 class SolarBMS {
     public:
-        SolarBMS();
         SolarBMS(int iRelayPin, int SDA, int SCL, int addr);
         int readVoltage();
         int readCurrent();

@@ -1,8 +1,6 @@
 #include "SolarBMS.h"
 
-SolarBMS::SolarBMS() {
 
-}
 
 SolarBMS::SolarBMS(int iRelayPin, int SDA, int SCL, int addr)
 {
