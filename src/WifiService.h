@@ -12,17 +12,18 @@ class WifiService {
     public:
         WifiService(const char* ssid, const char* password);
         void sendStatus(double voltage, double current);
-        bool connectWifi(const char *ssid, const char *password);
+        bool connectWifi();
         bool connectMQTT(IPAddress ip, int port, const char* user, const char* password);
         bool connectMQTT(IPAddress ip, int port);
         bool isConnected();
         bool isMQTTConnected();
         void publish(const char* topic, const char* payload);
         void scanAndPrintNetworks();
-        void handleMQTT();
+
     private:
         bool _bConnected;
-        
+        const char* _ssid;
+        const char* _password;
         
         void _onConnectedCb();
         void _onDisconnectedCb();

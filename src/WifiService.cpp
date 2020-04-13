@@ -13,7 +13,8 @@ WifiService::WifiService(const char *ssid, const char *password)
   _bConnected = false;
   _mqttClient = PubSubClient(_espClient);
   SPIFFS.begin();
-  connectWifi(ssid, password);
+  _ssid = ssid;
+  _password = password;
 }
 
 void WifiService::publish(const char *topic, const char *payload)
@@ -29,18 +30,13 @@ void WifiService::publish(const char *topic, const char *payload)
   }
 }
 
-bool WifiService::connectWifi(const char *ssid, const char *password)
+bool WifiService::connectWifi()
 {
-  if (!WiFi.isConnected())
-
-  {
-
-    Serial.print("Connecting to WiFi...");
-     WiFi.setAutoReconnect(true);
-    WiFi.begin(ssid, password);
+    Serial.print("Connecting to WiFi");
+    WiFi.setAutoReconnect(true);
+    WiFi.begin(_ssid, _password);
     // Wait for connection to wifi
-    short timer = 0;
-    while (!WiFi.isConnected() && timer++ < 10) //10 seconds timeout
+    while (!WiFi.isConnected()) 
     {
       delay(1000);
       Serial.print(".");
@@ -51,7 +47,7 @@ bool WifiService::connectWifi(const char *ssid, const char *password)
       Serial.println(WiFi.localIP());
       if (MDNS.begin(HOSTNAME))
       {
-        Serial.println("MDNS responder started");
+        Serial.println("mDNS responder started");
         startWebserver();
       }
       return true;
@@ -61,11 +57,6 @@ bool WifiService::connectWifi(const char *ssid, const char *password)
       Serial.println("Connection to WiFi failed");
       return false;
     }
-  } else {
-    Serial.println("already connected!");
-    return true;
-  }
-  
 }
 
 bool WifiService::connectMQTT(IPAddress ip, int port, const char *user, const char *password)
@@ -117,12 +108,6 @@ bool WifiService::isMQTTConnected()
   return _mqttClient.connected();
 }
 
-//method to be put in loop
-void WifiService::handleMQTT()
-{
-  _mqttClient.loop();
-}
-
 void WifiService::scanAndPrintNetworks()
 {
   WiFi.disconnect();
@@ -137,7 +122,7 @@ void WifiService::scanAndPrintNetworks()
   {
     Serial.print(n);
     Serial.println(" networks found");
-    for (int i = 0; i < n; ++i)
+    for (int i = 0; i < n; i++)
     {
       // Print SSID and RSSI for each network found
       Serial.print(i + 1);
@@ -204,5 +189,6 @@ void startWebserver()
 
 void handleClients()
 {
+  _mqttClient.loop();
   _webserver.handleClient();
 }

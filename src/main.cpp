@@ -45,7 +45,7 @@ void setup()
   pinMode(RELAY_PIN, OUTPUT);
 
   Serial.begin(74880);
-  Serial.println("SolarBMS v0.3");
+  Serial.println("SolarBMS v0.4");
   Serial.setDebugOutput(true);
   ticker.attach(1, onTimerInterrupt);
 }
@@ -53,11 +53,7 @@ void setup()
 void loop()
 {
   maintainMQTT();
-
-  // handleClients();
-  wifiService.handleMQTT();
   handleClients();
-  //dont forget to add mqtt client looping here if required
   delay(500); 
    
 }
