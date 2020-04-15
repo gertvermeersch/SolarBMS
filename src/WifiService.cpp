@@ -6,12 +6,11 @@ ESP8266WebServer _webserver(80);
 
 //crashes when using instance variables
 WiFiClient _espClient;
-PubSubClient _mqttClient;
+PubSubClient _mqttClient(_espClient);
 
 WifiService::WifiService(const char *ssid, const char *password)
 {
   _bConnected = false;
-  _mqttClient = PubSubClient(_espClient);
   SPIFFS.begin();
   _ssid = ssid;
   _password = password;
@@ -32,17 +31,24 @@ void WifiService::publish(const char *topic, const char *payload)
 
 bool WifiService::connectWifi()
 {
+    scanAndPrintNetworks();
     Serial.print("Connecting to WiFi");
-    WiFi.setAutoReconnect(true);
+    
+    // int32_t channel = 2;
+    // uint8_t bssidval = 24; 
+    short timer = 0;
     WiFi.begin(_ssid, _password);
-    // Wait for connection to wifi
     while (!WiFi.isConnected()) 
     {
       delay(1000);
       Serial.print(".");
+      if(timer++ == 120) {
+        ESP.reset();
+      }
     }
     if (WiFi.isConnected())
     {
+      WiFi.setAutoReconnect(true);
       Serial.print("IP address: ");
       Serial.println(WiFi.localIP());
       if (MDNS.begin(HOSTNAME))
@@ -68,7 +74,7 @@ bool WifiService::connectMQTT(IPAddress ip, int port, const char *user, const ch
     Serial.println("Connecting to MQTT server...");
     if (_mqttClient.connect(HOSTNAME, user, password))
     {
-      publish("/solar/available", "online");
+      //publish("/solar/available", "online");
       return true;
     }
     else
@@ -88,7 +94,7 @@ bool WifiService::connectMQTT(IPAddress ip, int port)
     Serial.println("Connecting to MQTT server...");
     if (_mqttClient.connect(HOSTNAME))
     {
-      publish("/solar/available", "online");
+     // publish("/solar/available", "online");
       return true;
     }
     else
@@ -131,7 +137,11 @@ void WifiService::scanAndPrintNetworks()
       Serial.print(" (");
       Serial.print(WiFi.RSSI(i));
       Serial.print(")");
-      Serial.println((WiFi.encryptionType(i) == ENC_TYPE_NONE) ? " " : "*");
+      Serial.print((WiFi.encryptionType(i) == ENC_TYPE_NONE) ? " " : "*");
+      Serial.print(" channel: ");
+      Serial.print(WiFi.channel(i));
+      Serial.print(" BSSID: ");
+      Serial.println(*WiFi.BSSID(i));
       delay(10);
     }
   }

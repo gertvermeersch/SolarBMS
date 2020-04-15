@@ -39,7 +39,7 @@ int SolarBMS::readVoltage()
 
 double SolarBMS::getLastVoltage() {
     // return _iVoltage * 0.000125 * 6.15; // 1/6 voltage divider
-    return _iVoltage / 64.0; // max = 16V 1024 / 64 
+    return roundf(_iVoltage / 64 * 100 )/100; // max = 16V 1024 / 64 
 }
 
 int SolarBMS::readCurrent()
