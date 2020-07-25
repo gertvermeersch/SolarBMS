@@ -16,12 +16,14 @@ WifiService::WifiService(const char *ssid, const char *password)
   _password = password;
 }
 
-void WifiService::publish(const char *topic, const char *payload)
+void WifiService::publish(const char * topic, const char * payload)
 {
 
   if (_mqttClient.connected() && WiFi.isConnected())
   {
     _mqttClient.publish(topic, payload);
+    Serial.print("Message published to ");
+    Serial.println(topic);
   }
   else
   {

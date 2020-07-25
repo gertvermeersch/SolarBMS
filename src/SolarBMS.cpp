@@ -8,32 +8,36 @@ SolarBMS::SolarBMS(int iRelayPin, int SDA, int SCL, int addr)
     pinMode(iRelayPin, OUTPUT);
     _iVoltage = 0;
     _iCurrent = 0;
-    // Wire.begin(SDA, SCL); //SDA SCL
-    // _ads = Adafruit_ADS1115(addr);
-    // _ads.begin();
+    Wire.begin(SDA, SCL); //SDA SCL
+    _ads = Adafruit_ADS1115(addr);
     
-    // int16_t adc0, adc1, adc2, adc3;
+}
 
-    // adc0 = _ads.readADC_SingleEnded(0);
-    // adc1 = _ads.readADC_SingleEnded(1);
-    // adc2 = _ads.readADC_SingleEnded(2);
-    // adc3 = _ads.readADC_SingleEnded(3);
-    // Serial.print("AIN0: "); Serial.println(adc0);
-    // Serial.print("AIN1: "); Serial.println(adc1);
-    // Serial.print("AIN2: "); Serial.println(adc2);
-    // Serial.print("AIN3: "); Serial.println(adc3);
-    // Serial.println(" ");
+void SolarBMS::begin() {
+    _ads.begin();
+    
+    int16_t adc0, adc1, adc2, adc3;
+
+    adc0 = _ads.readADC_SingleEnded(0);
+    adc1 = _ads.readADC_SingleEnded(1);
+    adc2 = _ads.readADC_SingleEnded(2);
+    adc3 = _ads.readADC_SingleEnded(3);
+    Serial.print("AIN0: "); Serial.println(adc0);
+    Serial.print("AIN1: "); Serial.println(adc1);
+    Serial.print("AIN2: "); Serial.println(adc2);
+    Serial.print("AIN3: "); Serial.println(adc3);
+    Serial.println(" ");
 }
 
 int SolarBMS::readVoltage()
 {
-    _iVoltage = analogRead(A0);
+     //_iVoltage = analogRead(A0);
 
     // _ads.setGain(GAIN_ONE);
     // delay(10);
     // _iVoltage = _ads.readADC_SingleEnded(2);
     // Serial.println(_iVoltage);
-    // delay(10);
+    delay(10);
     return _iVoltage;
 }
 

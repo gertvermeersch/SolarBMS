@@ -17,6 +17,7 @@ class SolarBMS {
         int getLastCurrentRaw();
         bool getRelayOn();
         void intervalRead();
+        void begin();
     
     private:
         int _iRelayPin;

@@ -22,14 +22,14 @@ double minutesVoltage[60];
 short secondscounter;
 short minutescounter;
 short hourscounter;
+bool send = false;
 
 IPAddress ip = IPAddress(192, 168, 1, 14);
 
 SolarBMS bms(RELAY_PIN, 4, 5, 0x48);
 WifiService wifiService(ssid, password);
 
-short timer = 0;
-bool send = true;
+//short timer = 0;
 
 void setup();
 void getValueJSON();
@@ -41,7 +41,7 @@ void maintainMQTT();
 
 void setup()
 {
-  
+
   pinMode(RELAY_PIN, OUTPUT);
 
   Serial.begin(74880);
@@ -49,15 +49,22 @@ void setup()
   Serial.setDebugOutput(true);
   ticker.attach(1, onTimerInterrupt);
   wifiService.connectWifi();
+  bms.begin();
 }
 
 void loop()
 {
-  maintainMQTT();
-  //handleClients();
-  
-  delay(500); 
-   
+  //maintainMQTT();
+  handleClients();
+  if (send)
+  {
+    send = false;
+    getValueJSON();
+    maintainMQTT();
+    wifiService.publish(SENSOR_TOPIC, buffer);
+    Serial.println(buffer);
+  }
+  delay(500);
 }
 
 void maintainMQTT()
@@ -75,37 +82,40 @@ void maintainMQTT()
     {
       Serial.println("MQTT connection failed!");
     }
-  } else if (!wifiService.isConnected()) {
+  }
+  else if (!wifiService.isConnected())
+  {
     wifiService.connectWifi();
   }
 }
 
 void onTimerInterrupt()
 { //each 10 seconds
-  bms.readCurrent();
-  bms.readVoltage();
+  //bms.readCurrent();
+  //bms.readVoltage();
   secondsVoltage[secondscounter++] = bms.getLastVoltage();
-  
-   if (secondscounter == 60)
+
+  if (secondscounter == 60)
   {
     secondscounter = 0;
     meanVoltage = 0;
-    
+
     for (short i = 0; i < 60; i++)
     {
       meanVoltage += secondsVoltage[i];
     }
-    meanVoltage = meanVoltage / 60;
+    meanVoltage = roundf(meanVoltage / 60 * 100) / 100;
     bms.determineRelay(meanVoltage);
-    getValueJSON();
-    
+    send = true;
+
     Serial.println(minutescounter);
-    Serial.println(buffer);
-    wifiService.publish(SENSOR_TOPIC, buffer);
+    
+
     minutesVoltage[minutescounter++] = meanVoltage;
   }
 
-  if(minutescounter == 60) {
+  if (minutescounter == 60)
+  {
     minutescounter = 0;
     meanHour = 0;
     for (short i = 0; i < 60; i++)
